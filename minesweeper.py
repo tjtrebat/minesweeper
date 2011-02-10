@@ -52,21 +52,22 @@ class Minesweeper:
                         self.board[(row, col)] = str(mine_count)
                         self.buttons[(row, col)].config(command=self.found_border)
 
-    def found_space(self, to):
-        i, j = to[0], to[1]
-        self.board[(i, j)] = ''
-        self.buttons[(i, j)].grid_forget()
-        for space in [(i - 1, j - 1), (i - 1, j), (i - 1, j + 1), (i, j + 1),
-                  (i + 1, j + 1), (i + 1, j), (i + 1, j - 1), (i, j - 1)]:
-            try:
-                if self.board[space] == '0':
-                    self.found_space(space)
-                elif self.board[space] != 'm':
-                    self.buttons[space].grid_forget()
-                    self.buttons[space] = Label(self.frame, width=1, height=1, text=self.board[space])
-                    self.buttons[space].grid(row=space[0], column=space[1])
-            except KeyError:
-                pass
+    def found_space(self, space):
+        row, col = space[0], space[1]
+        self.board[(row, col)] = ''
+        self.buttons[(row, col)].grid_forget()
+        for i in range(3):
+            for j in range(3):
+                space = (row + i - 1, col + j - 1)
+                try:
+                    if self.board[space] == '0':
+                        self.found_space(space)
+                    elif self.board[space] != 'm':
+                        self.buttons[space].grid_forget()
+                        self.buttons[space] = Label(self.frame, width=1, height=1, text=self.board[space])
+                        self.buttons[space].grid(row=space[0], column=space[1])
+                except KeyError:
+                    pass
 
     def found_mine(self):
         pass
