@@ -124,7 +124,7 @@ class Minesweeper:
                     num_btn += 1
                     if self.board[(i, j)] == 'm' and (i, j) in self.flags:
                         mines_found += 1
-        if num_btn ==  mines_found == self.mines:
+        if num_btn ==  mines_found == self.mines: # print game over
             print "GAME OVER!"
 
     def get_photo_image(self, image):
