@@ -19,6 +19,7 @@ class Minesweeper:
         self.buttons = {}
         self.add_header()
         self.add_board()
+        print self
 
     def add_header(self):
         frame = Frame(self.root)
@@ -44,16 +45,10 @@ class Minesweeper:
                     self.add_button(key, width=1, height=1, command=lambda x=key:self.start_game(x))
 
     def start_game(self, space):
-        for key, value in self.board.items():
-            if value == '0':
-                self.buttons[key].config(command=lambda x= key:self.found_space(x))
-            elif value != 'm':
-                self.buttons[key].config(command=lambda x= key:self.found_border(x))
-        if self.board[space] == '0':
-            self.found_space(space)
-        elif self.board[space] != 'm':
-            self.found_border(space)
         self.tick()
+        for key, value in self.board.items():
+            self.configure_command(key)
+        self.buttons[space].invoke()
 
     def tick(self):
         self.tv_timer.set(self.tv_timer.get() + 1)
@@ -66,7 +61,8 @@ class Minesweeper:
                 space = key
         if space in self.questions:
             self.buttons[space].destroy()
-            self.add_button(space, width=1, height=1, command=lambda x= space:self.found_space(x))
+            self.add_button(space, width=1, height=1)
+            self.configure_command(space)
             self.questions.remove(space)
         elif space in self.flags:
             self.buttons[space].destroy()
@@ -81,6 +77,17 @@ class Minesweeper:
             self.flags.append(space)
             self.tv_mines.set(self.tv_mines.get() - 1)
         self.try_game_over()
+
+    def configure_command(self, key):
+        if self.board[key] == 'm':
+            self.buttons[key].config(command=self.found_mine)
+        elif hasattr(self, "timer"):
+            if self.board[key] == '0':
+                self.buttons[key].config(command=lambda x= key:self.found_space(x))
+            elif self.board[key] != 'm':
+                self.buttons[key].config(command=lambda x= key:self.found_border(x))
+        else:
+            self.buttons[key].config(command=lambda x=key:self.start_game(x))
 
     def add_button(self, key, **kwargs):
         self.buttons[key] = Button(self.frame, **kwargs)
@@ -99,26 +106,24 @@ class Minesweeper:
         count = 0
         for i in range(3):
             for j in range(3):
-                try:
-                    if (key[0] + i - 1, key[1] + j - 1) in self.mines:
-                        count += 1
-                except KeyError:
-                    pass
+                if (key[0] + i - 1, key[1] + j - 1) in self.mines:
+                    count += 1
         return count
-    
+
     def found_space(self, key):
         self.board[key] = " "
         self.clear_button(key)
         for i in range(3):
             for j in range(3):
                 space = (key[0] + i - 1, key[1] + j - 1)
-                try:
-                    if self.board[space] == '0':
-                        self.found_space(space)
-                    elif self.board[space] != 'm':
-                        self.clear_button(space)
-                except KeyError:
-                    pass
+                if space not in self.flags + self.questions:
+                    try:
+                        if self.board[space] == '0':
+                            self.found_space(space)
+                        elif self.board[space] != 'm':
+                            self.clear_button(space)
+                    except KeyError:
+                        pass
         self.try_game_over()
 
     def clear_button(self, key):
@@ -139,7 +144,8 @@ class Minesweeper:
                 if isinstance(self.buttons[key], Button):
                     self.buttons[key].config(command=lambda:None)
                     self.buttons[key].bind("<Button-3>", lambda x:None)
-        self.time.after_cancel(self.timer)
+        if hasattr(self, "timer"):
+            self.time.after_cancel(self.timer)
 
     def found_border(self, key):
         self.buttons[key].grid_forget()
