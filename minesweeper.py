@@ -10,16 +10,21 @@ class Minesweeper:
         self.root.title("Minesweeper")
         self.frame = Frame(root)
         self.frame.grid()
-        self.num_mines = mines
         self.size = size
-        self.mines = self.get_mines()
-        self.flags = []
-        self.questions = []
+        self.num_mines = mines
         self.board = {}
         self.buttons = {}
+        self.add_menu_bar()
         self.add_header()
-        self.add_board()
-        print self
+        self.new_game()
+
+    def add_menu_bar(self):
+        menu = Menu(self.root)
+        file_menu = Menu(menu, tearoff=0)
+        file_menu.add_command(label="New", command=self.new_game)
+        #file_menu.add_command(label="Open", command=self.open_note)
+        menu.add_cascade(label="File", menu=file_menu)
+        self.root.config(menu=menu)
 
     def add_header(self):
         frame = Frame(self.root)
@@ -33,7 +38,20 @@ class Minesweeper:
         self.tv_mines.set(self.num_mines)
         Label(frame, textvariable=self.tv_mines).grid(row=0, column=3)
 
+    def new_game(self):
+        self.mines = self.get_mines()
+        self.flags = []
+        self.questions = []
+        self.add_board()
+        self.tv_mines.set(self.num_mines)
+        if hasattr(self, "timer"):
+            self.tv_timer.set(0)
+            self.time.after_cancel(self.timer)
+        print self
+
     def add_board(self):
+        for key in self.buttons:
+            self.buttons[key].destroy()
         for i in range(self.size):
             for j in range(self.size):
                 key = (i, j)
@@ -127,7 +145,7 @@ class Minesweeper:
         self.try_game_over()
 
     def clear_button(self, key):
-        self.buttons[key].grid_forget()
+        self.buttons[key].destroy()
         self.buttons[key] = Label(self.frame, text=self.board[key])
         self.buttons[key].grid(row=key[0], column=key[1])
 
@@ -136,7 +154,7 @@ class Minesweeper:
             for j in range(self.size):
                 key = (i, j)
                 if self.board[key] == 'm':
-                    self.buttons[key].grid_forget()
+                    self.buttons[key].destroy()
                     photo = self.get_photo_image('mine.gif')
                     self.buttons[key] = Label(self.frame, image=photo)
                     self.buttons[key].image = photo
@@ -148,7 +166,7 @@ class Minesweeper:
             self.time.after_cancel(self.timer)
 
     def found_border(self, key):
-        self.buttons[key].grid_forget()
+        self.buttons[key].destroy()
         self.buttons[key] = Label(self.frame, width=1, height=1, text=self.board[key])
         self.buttons[key].grid(row=key[0], column=key[1])
         self.try_game_over()
