@@ -3,6 +3,7 @@ __author__ = 'Tom'
 import random
 from Tkinter import *
 from PIL import Image, ImageTk
+import cPickle as pickle
 
 class Minesweeper:
     def __init__(self, root):
@@ -13,14 +14,25 @@ class Minesweeper:
         self.size = (9,) * 2
         self.num_mines = 10
         self.buttons = {}
+        self.get_stats()
         self.add_menu_bar()
         self.add_header()
         self.new_game()
+
+    def get_stats(self):
+        try:
+            self.stats = pickle.load(open('stats.p'))
+        except IOError, KeyError:
+            d = {"games_played": 0, "games_won": 0, "win_percentage": 0,
+                                       "longest_winning_streak": 0, "longest_losing_streak": 0, "current_streak": 0}
+            self.stats = {"Beginner": d, "Intermediate": d.copy(), "Advanced": d.copy()}
 
     def add_menu_bar(self):
         menu = Menu(self.root)
         file_menu = Menu(menu, tearoff=0)
         file_menu.add_command(label="New", command=self.new_game)
+        file_menu.add_command(label="Statistics", command=self.statistics)
+        file_menu.add_separator()
         self.level = "Beginner"
         self.levels = {"Beginner": BooleanVar(), "Intermediate": BooleanVar(), "Advanced": BooleanVar(), "Custom": BooleanVar()}
         file_menu.add_checkbutton(label="Beginner", variable=self.levels["Beginner"], command=lambda x= "Beginner":self.new_game(level=x))
@@ -62,8 +74,55 @@ class Minesweeper:
             self.tv_timer.set(0)
             self.time.after_cancel(self.timer)
 
+    def statistics(self):
+        self.stat_root = Tk()
+        frame = Frame(self.stat_root, padx=10, pady=10)
+        frame.grid()
+        l = Listbox(frame)
+        l.insert(END, "Beginner")
+        l.insert(END, "Intermediate")
+        l.insert(END, "Advanced")
+        l.selection_set(0)
+        l.bind("<Button-1>", self.set_stat_labels)
+        l.grid(row=0, column=0)
+        best_times = LabelFrame(frame, padx=75, text="Best Times")
+        self.times = [StringVar() for i in range(5)]
+        for time in self.times:
+            Label(best_times, textvariable=self.times).grid()
+        best_times.grid(padx=20, row=0, column=1, sticky="N")
+        results = Frame(frame)
+        results.grid(row=0, column=2)
+        self.stat_labels = self.get_stat_labels(results)
+        Label(results, text="Games played:").grid(row=0, column=0, sticky="W")
+        self.stat_labels[l.get(l.curselection()[0])]["games_played"].grid(row=0, column=1)
+        Label(results, text="Games won:").grid(row=1, column=0, sticky="W")
+        self.stat_labels[l.get(l.curselection()[0])]["games_won"].grid(row=1, column=1)
+        Label(results, text="Win percentage:").grid(row=2, column=0, sticky="W")
+        self.stat_labels[l.get(l.curselection()[0])]["win_percentage"].grid(row=2, column=1)
+        Label(results, text="Longest winning streak:").grid(row=3, column=0, sticky="W")
+        self.stat_labels[l.get(l.curselection()[0])]["longest_winning_streak"].grid(row=3, column=1)
+        Label(results, text="Longest losing streak:").grid(row=4, column=0, sticky="W")
+        self.stat_labels[l.get(l.curselection()[0])]["longest_losing_streak"].grid(row=4, column=1)
+        Label(results, text="Current streak:").grid(row=5, column=0, sticky="W")
+        self.stat_labels[l.get(l.curselection()[0])]["current_streak"].grid(row=5, column=1)
+        self.set_stat_labels(l.get(l.curselection()[0]))
+
+    def get_stat_labels(self, frame):
+        labels = {"Beginner": {}, "Intermediate": {}, "Advanced": {}}
+        for key, value in self.stats.items():
+            for stat, stat_value in value.items():
+                labels[key][stat] = Label(frame)
+        return labels
+
+    def set_stat_labels(self, level):
+        if isinstance(level, Event):
+            level = level.widget.get(level.widget.curselection()[0])
+        for key, label in self.stat_labels[level].items():
+            label.config(text=self.stats[level][key])
+
     def custom_level(self):
         self.custom = Tk()
+        self.custom.title("Custom")
         frame = Frame(self.custom, padx=10, pady=10)
         frame.grid()
         Label(frame, text="Height:").grid(row=0, column=0)
@@ -204,7 +263,7 @@ class Minesweeper:
                     self.buttons[key].grid(row=i, column=j)
                 if isinstance(self.buttons[key], Button):
                     self.buttons[key].config(command=lambda:None)
-                    self.buttons[key].bind("<Button-3>", lambda x:None)
+                    self.buttons[key].unbind("<Button-3>")
         if hasattr(self, "timer"):
             self.time.after_cancel(self.timer)
 
@@ -225,7 +284,8 @@ class Minesweeper:
                         mines_found += 1
         if num_btn ==  mines_found == self.num_mines: # print game over
             self.time.after_cancel(self.timer)
-            print "GAME OVER!"
+            for key, value in self.buttons.items():
+                value.unbind("<Button-3>")
 
     def get_photo_image(self, image):
         return ImageTk.PhotoImage(Image.open(image))
