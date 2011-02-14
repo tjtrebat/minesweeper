@@ -28,9 +28,6 @@ class Minesweeper:
             d = {"games_played": 0, "games_won": 0, "win_percentage": 0,
                                        "longest_winning_streak": 0, "longest_losing_streak": 0, "current_streak": "0 losses"}
             self.stats = {"Beginner": d, "Intermediate": d.copy(), "Advanced": d.copy()}
-        else:
-            for key in self.stats.keys():
-                self.stats[key]["current_streak"] = "0 losses"
 
     def save_stats(self):
         if self.level != "Custom":
