@@ -22,7 +22,7 @@ class Minesweeper:
     def get_stats(self):
         try:
             self.stats = pickle.load(open('stats.p'))
-        except IOError, KeyError:
+        except IOError:
             d = {"games_played": 0, "games_won": 0, "win_percentage": 0,
                                        "longest_winning_streak": 0, "longest_losing_streak": 0, "current_streak": 0}
             self.stats = {"Beginner": d, "Intermediate": d.copy(), "Advanced": d.copy()}
