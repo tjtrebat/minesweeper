@@ -3,7 +3,7 @@ __author__ = 'Tom'
 import random
 from Tkinter import *
 from PIL import Image, ImageTk
-import cPickle as pickle
+from statistics import Statistics
 
 class Minesweeper:
     def __init__(self, root):
@@ -13,41 +13,27 @@ class Minesweeper:
         self.frame.grid()
         self.size = (9,) * 2
         self.num_mines = 10
-        self.winning_streak = 0
-        self.losing_streak = 0
+        self.stats = Statistics()
         self.buttons = {}
         self.add_menu_bar()
         self.add_header()
         self.new_game()
-        self.get_stats()
-
-    def get_stats(self):
-        try:
-            self.stats = pickle.load(open('stats.p'))
-        except IOError:
-            d = {"games_played": 0, "games_won": 0, "win_percentage": 0,
-                                       "longest_winning_streak": 0, "longest_losing_streak": 0, "current_streak": "0 losses"}
-            self.stats = {"Beginner": d, "Intermediate": d.copy(), "Advanced": d.copy()}
-
-    def save_stats(self):
-        if self.level != "Custom":
-            if self.stats[self.level]["longest_winning_streak"] < self.winning_streak:
-                self.stats[self.level]["longest_winning_streak"] = self.winning_streak
-            if self.stats[self.level]["longest_losing_streak"] < self.losing_streak:
-                self.stats[self.level]["longest_losing_streak"] = self.losing_streak
-            pickle.dump(self.stats, open('stats.p', 'w+'))
             
     def add_menu_bar(self):
         menu = Menu(self.root)
         file_menu = Menu(menu, tearoff=0)
         file_menu.add_command(label="New", command=self.new_game)
-        file_menu.add_command(label="Statistics", command=self.statistics)
+        file_menu.add_command(label="Statistics", command=self.stats.show_gui)
         file_menu.add_separator()
         self.level = "Beginner"
-        self.levels = {"Beginner": BooleanVar(), "Intermediate": BooleanVar(), "Advanced": BooleanVar(), "Custom": BooleanVar()}
-        file_menu.add_checkbutton(label="Beginner", variable=self.levels["Beginner"], command=lambda x= "Beginner":self.new_game(level=x))
-        file_menu.add_checkbutton(label="Intermediate", variable=self.levels["Intermediate"], command=lambda x= "Intermediate":self.new_game(level=x))
-        file_menu.add_checkbutton(label="Advanced", variable=self.levels["Advanced"], command=lambda x= "Advanced":self.new_game(level=x))
+        self.levels = {"Beginner": BooleanVar(), "Intermediate": BooleanVar(),
+                       "Advanced": BooleanVar(), "Custom": BooleanVar()}
+        file_menu.add_checkbutton(label="Beginner", variable=self.levels["Beginner"],
+                                  command=lambda x= "Beginner":self.new_game(level=x))
+        file_menu.add_checkbutton(label="Intermediate", variable=self.levels["Intermediate"],
+                                  command=lambda x= "Intermediate":self.new_game(level=x))
+        file_menu.add_checkbutton(label="Advanced", variable=self.levels["Advanced"],
+                                  command=lambda x= "Advanced":self.new_game(level=x))
         file_menu.add_command(label="Custom", command=self.custom_level)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=quit)
@@ -75,8 +61,8 @@ class Minesweeper:
             if self.level == "Custom":
                 self.custom.destroy()
             if self.level != level:
-                self.winning_streak = 0
-                self.losing_streak = 0
+                self.stats.winning_streak = 0
+                self.stats.losing_streak = 0
         self.levels[self.level].set(True)
         self.mines = self.get_mines()
         self.flags = []
@@ -86,54 +72,6 @@ class Minesweeper:
         if hasattr(self, "timer"):
             self.tv_timer.set(0)
             self.time.after_cancel(self.timer)
-
-    def statistics(self):
-        self.stat_root = Tk()
-        frame = Frame(self.stat_root, padx=10, pady=10)
-        frame.grid()
-        l = Listbox(frame)
-        l.insert(END, "Beginner")
-        l.insert(END, "Intermediate")
-        l.insert(END, "Advanced")
-        l.selection_set(0)
-        l.bind("<ButtonRelease-1>", self.set_stat_labels)
-        l.grid(row=0, column=0)
-        best_times = LabelFrame(frame, padx=75, text="Best Times")
-        self.times = [StringVar() for i in range(5)]
-        for time in self.times:
-            Label(best_times, textvariable=self.times).grid()
-        best_times.grid(padx=20, row=0, column=1, sticky="N")
-        results = Frame(frame)
-        results.grid(row=0, column=2)
-        self.stat_labels = self.get_stat_labels(results)
-        Label(results, text="Games played:").grid(row=0, column=0, sticky="W")
-        self.stat_labels["games_played"].grid(row=0, column=1)
-        Label(results, text="Games won:").grid(row=1, column=0, sticky="W")
-        self.stat_labels["games_won"].grid(row=1, column=1)
-        Label(results, text="Win percentage:").grid(row=2, column=0, sticky="W")
-        self.stat_labels["win_percentage"].grid(row=2, column=1)
-        Label(results, text="Longest winning streak:").grid(row=3, column=0, sticky="W")
-        self.stat_labels["longest_winning_streak"].grid(row=3, column=1)
-        Label(results, text="Longest losing streak:").grid(row=4, column=0, sticky="W")
-        self.stat_labels["longest_losing_streak"].grid(row=4, column=1)
-        Label(results, text="Current streak:").grid(row=5, column=0, sticky="W")
-        self.stat_labels["current_streak"].grid(row=5, column=1)
-        self.set_stat_labels(l.get(l.curselection()[0]))
-
-    def get_stat_labels(self, frame):
-        labels = {}
-        for key in self.stats["Beginner"].keys():
-            labels[key] = Label(frame)
-        return labels
-
-    def set_stat_labels(self, level):
-        if isinstance(level, Event):
-            level = level.widget.get(level.widget.curselection()[0])
-        for key, label in self.stat_labels.items():
-            text = self.stats[level][key]
-            if key == "win_percentage":
-                text = "%d%%" % text
-            label.config(text=text)
 
     def custom_level(self):
         self.custom = Tk()
@@ -152,15 +90,15 @@ class Minesweeper:
         Button(frame, text="OK", command=lambda x= "Custom":self.new_game(level=x)).grid()
 
     def get_size(self):
-        sizes = {"Beginner": (9, 9), "Intermediate": (16, 16), "Advanced": (16, 30)}
         if self.level == "Custom":
             return (int(self.custom_height.get()), int(self.custom_width.get()))
+        sizes = {"Beginner": (9, 9), "Intermediate": (16, 16), "Advanced": (16, 30)}
         return sizes[self.level]
 
     def get_num_mines(self):
-        mines = {"Beginner": 10, "Intermediate": 40, "Advanced": 99}
         if self.level == "Custom":
             return int(self.custom_mines.get())
+        mines = {"Beginner": 10, "Intermediate": 40, "Advanced": 99}
         return mines[self.level]
 
     def add_board(self):
@@ -182,8 +120,10 @@ class Minesweeper:
         self.tick()
         for key, value in self.board.items():
             self.configure_command(key)
-        self.stats[self.level]["games_played"] += 1
-        self.save_stats()
+        if self.level != "Custom":
+            self.stats.stats[self.level]["games_played"] += 1
+            self.stats.set_win_percentage(self.level)
+            self.stats.save_stats(self.level)
         self.buttons[space].invoke()
 
     def tick(self):
@@ -282,10 +222,10 @@ class Minesweeper:
                     self.buttons[key].unbind("<Button-3>")
         if hasattr(self, "timer"):
             self.time.after_cancel(self.timer)
-        self.winning_streak = 0
-        self.losing_streak += 1
         if self.level != "Custom":
-            self.stats[self.level]["current_streak"] = "%d losses" % self.losing_streak
+            self.stats.winning_streak = 0
+            self.stats.losing_streak += 1
+            self.stats.stats[self.level]["current_streak"] = "%d losses" % self.stats.losing_streak
 
     def found_border(self, key):
         self.buttons[key].destroy()
@@ -306,12 +246,13 @@ class Minesweeper:
             self.time.after_cancel(self.timer)
             for key, value in self.buttons.items():
                 value.unbind("<Button-3>")
-            self.stats[self.level]["games_won"] += 1
-            self.winning_streak += 1
-            self.losing_streak = 0
             if self.level != "Custom":
-                self.stats[self.level]["current_streak"] = "%d wins" % self.winning_streak
-            self.save_stats()
+                self.stats.stats[self.level]["games_won"] += 1
+                self.stats.set_win_percentage(self.level)
+                self.stats.winning_streak += 1
+                self.stats.losing_streak = 0
+                self.stats.stats[self.level]["current_streak"] = "%d wins" % self.stats.winning_streak
+                self.stats.save_stats()
 
     def get_photo_image(self, image):
         return ImageTk.PhotoImage(Image.open(image))
