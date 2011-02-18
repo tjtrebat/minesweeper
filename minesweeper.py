@@ -209,7 +209,7 @@ class Minesweeper:
         for i in range(self.size[0]):
             for j in range(self.size[1]):
                 key = (i, j)
-                if self.board[key] == 'm':
+                if self.board[key] == 'm' and key not in (self.flags and self.questions):
                     self.buttons[key].destroy()
                     photo = self.get_photo_image('mine.gif')
                     self.buttons[key] = Label(self.frame, image=photo)
