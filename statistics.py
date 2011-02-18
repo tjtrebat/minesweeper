@@ -106,7 +106,7 @@ class Statistics:
         self.save_stats(level)
         self.user_window.destroy()
 
-    def get_user(self, level, time):
+    def enter_high_score(self, level, time):
         self.user_window = Tk()
         self.user_window.title("High Scores")
         frame = Frame(self.user_window, padx=5)
@@ -135,7 +135,7 @@ class Statistics:
         self.stats[level]["current_streak"] = "%d wins" % self.winning_streak
         self.save_stats(level)
         if self.has_best_time(level, time):
-            self.get_user(level, time)
+            self.enter_high_score(level, time)
 
     def has_best_time(self, level, time):
         best_times = self.stats[level]["best_times"]

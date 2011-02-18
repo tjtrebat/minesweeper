@@ -55,14 +55,14 @@ class Minesweeper:
     def new_game(self, level=None):
         if level is not None:
             self.levels[self.level].set(False)
+            if self.level != level:
+                self.stats.winning_streak = 0
+                self.stats.losing_streak = 0
             self.level = level
             self.size = self.get_size()
             self.num_mines = self.get_num_mines()
             if self.level == "Custom":
                 self.custom.destroy()
-            if self.level != level:
-                self.stats.winning_streak = 0
-                self.stats.losing_streak = 0
         self.levels[self.level].set(True)
         self.mines = self.get_mines()
         self.flags = []
