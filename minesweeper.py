@@ -121,9 +121,7 @@ class Minesweeper:
         for key, value in self.board.items():
             self.configure_command(key)
         if self.level != "Custom":
-            self.stats.stats[self.level]["games_played"] += 1
-            self.stats.set_win_percentage(self.level)
-            self.stats.save_stats(self.level)
+            self.stats.play_game(self.level)
         self.buttons[space].invoke()
 
     def tick(self):
@@ -223,9 +221,7 @@ class Minesweeper:
         if hasattr(self, "timer"):
             self.time.after_cancel(self.timer)
         if self.level != "Custom":
-            self.stats.winning_streak = 0
-            self.stats.losing_streak += 1
-            self.stats.stats[self.level]["current_streak"] = "%d losses" % self.stats.losing_streak
+            self.stats.lose(self.level)
 
     def found_border(self, key):
         self.buttons[key].destroy()
@@ -247,12 +243,7 @@ class Minesweeper:
             for key, value in self.buttons.items():
                 value.unbind("<Button-3>")
             if self.level != "Custom":
-                self.stats.stats[self.level]["games_won"] += 1
-                self.stats.set_win_percentage(self.level)
-                self.stats.winning_streak += 1
-                self.stats.losing_streak = 0
-                self.stats.stats[self.level]["current_streak"] = "%d wins" % self.stats.winning_streak
-                self.stats.save_stats()
+                self.stats.win(self.level, self.tv_timer.get())
 
     def get_photo_image(self, image):
         return ImageTk.PhotoImage(Image.open(image))

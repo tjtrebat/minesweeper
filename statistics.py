@@ -23,7 +23,7 @@ class Statistics:
             return pickle.load(open('stats.p'))
         except IOError:
             pass
-        d = {"games_played": 0, "games_won": 0, "win_percentage": 0,
+        d = {"games_played": 0, "games_won": 0, "win_percentage": "0%",
                                    "longest_winning_streak": 0, "longest_losing_streak": 0,
                                    "current_streak": "0 losses", "best_times": [('', ''),] * 5}
         return {"Beginner": d, "Intermediate": d.copy(), "Advanced": d.copy()}
@@ -98,6 +98,50 @@ class Statistics:
     def set_win_percentage(self, level):
         win_percentage = 100 * (float(self.stats[level]["games_won"]) / self.stats[level]["games_played"])
         self.stats[level]["win_percentage"] = "%d%%" % win_percentage
+
+    def add_time(self, level, time):
+        best_times = self.stats[level]["best_times"]
+        best_times.append((time, self.user.get()))
+        self.stats[level]["best_times"] = sorted(best_times, key=lambda x: x[0])[:5]
+        self.save_stats(level)
+        self.user_window.destroy()
+
+    def get_user(self, level, time):
+        self.user_window = Tk()
+        self.user_window.title("High Scores")
+        frame = Frame(self.user_window, padx=5)
+        frame.grid()
+        Label(frame, text="Enter your name:").grid()
+        self.user = Entry(frame)
+        self.user.grid()
+        Button(frame, text="Enter", command=lambda (x, y)= (level, time):self.add_time(x, y)).grid()
+
+    def play_game(self, level):
+        self.stats[level]["games_played"] += 1
+        self.set_win_percentage(level)
+        self.save_stats(level)
+
+    def lose(self, level):
+        self.winning_streak = 0
+        self.losing_streak += 1
+        self.stats[level]["current_streak"] = "%d losses" % self.losing_streak
+        self.save_stats(level)
+
+    def win(self, level, time):
+        self.stats[level]["games_won"] += 1
+        self.set_win_percentage(level)
+        self.winning_streak += 1
+        self.losing_streak = 0
+        self.stats[level]["current_streak"] = "%d wins" % self.winning_streak
+        self.save_stats(level)
+        if self.has_best_time(level, time):
+            self.get_user(level, time)
+
+    def has_best_time(self, level, time):
+        best_times = self.stats[level]["best_times"]
+        if time < max([value[0] for value in best_times]):
+            return True
+        return False
 
 if __name__ == "__main__":
     statistics = Statistics()
