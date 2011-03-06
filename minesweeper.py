@@ -190,14 +190,11 @@ class Minesweeper:
         for i in range(3):
             for j in range(3):
                 space = (key[0] + i - 1, key[1] + j - 1)
-                if space not in self.flags + self.questions:
-                    try:
-                        if self.board[space] == '0':
-                            self.found_space(space)
-                        elif self.board[space] != 'm':
-                            self.clear_button(space)
-                    except KeyError:
-                        pass
+                if (space in self.board) and (space not in self.flags + self.questions):
+                    if self.board[space] == '0':
+                        self.found_space(space)
+                    elif self.board[space] != 'm':
+                        self.clear_button(space)
         self.try_game_over()
 
     def clear_button(self, key):
@@ -209,7 +206,7 @@ class Minesweeper:
         for i in range(self.size[0]):
             for j in range(self.size[1]):
                 key = (i, j)
-                if self.board[key] == 'm' and key not in (self.flags and self.questions):
+                if self.board[key] == 'm' and (key not in self.flags + self.questions):
                     self.buttons[key].destroy()
                     photo = self.get_photo_image('mine.gif')
                     self.buttons[key] = Label(self.frame, image=photo)
